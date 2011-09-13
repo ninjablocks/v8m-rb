@@ -236,7 +236,7 @@ Handle<Value> Shell::Read(const Arguments& args) {
 
 
 Handle<Value> Shell::ReadLine(const Arguments& args) {
-  static const int kBufferSize = 2048;
+  static const int kBufferSize = 256;
   char buffer[kBufferSize];
   Handle<String> accumulator = String::New("");
   int length;
