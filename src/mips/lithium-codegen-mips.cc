@@ -3089,7 +3089,7 @@ void LCodeGen::DoCallKeyed(LCallKeyed* instr) {
 
   int arity = instr->arity();
   Handle<Code> ic =
-      isolate()->stub_cache()->ComputeKeyedCallInitialize(arity, NOT_IN_LOOP);
+      isolate()->stub_cache()->ComputeKeyedCallInitialize(arity);
   CallCode(ic, RelocInfo::CODE_TARGET, instr);
   __ lw(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
 }
@@ -3101,7 +3101,7 @@ void LCodeGen::DoCallNamed(LCallNamed* instr) {
   int arity = instr->arity();
   RelocInfo::Mode mode = RelocInfo::CODE_TARGET;
   Handle<Code> ic =
-      isolate()->stub_cache()->ComputeCallInitialize(arity, NOT_IN_LOOP, mode);
+      isolate()->stub_cache()->ComputeCallInitialize(arity, mode);
   __ li(a2, Operand(instr->name()));
   CallCode(ic, mode, instr);
   // Restore context register.
@@ -3113,7 +3113,7 @@ void LCodeGen::DoCallFunction(LCallFunction* instr) {
   ASSERT(ToRegister(instr->result()).is(v0));
 
   int arity = instr->arity();
-  CallFunctionStub stub(arity, NOT_IN_LOOP, RECEIVER_MIGHT_BE_IMPLICIT);
+  CallFunctionStub stub(arity, RECEIVER_MIGHT_BE_IMPLICIT);
   CallCode(stub.GetCode(), RelocInfo::CODE_TARGET, instr);
   __ Drop(1);
   __ lw(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
@@ -3126,7 +3126,7 @@ void LCodeGen::DoCallGlobal(LCallGlobal* instr) {
   int arity = instr->arity();
   RelocInfo::Mode mode = RelocInfo::CODE_TARGET_CONTEXT;
   Handle<Code> ic =
-      isolate()->stub_cache()->ComputeCallInitialize(arity, NOT_IN_LOOP, mode);
+      isolate()->stub_cache()->ComputeCallInitialize(arity, mode);
   __ li(a2, Operand(instr->name()));
   CallCode(ic, mode, instr);
   __ lw(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
