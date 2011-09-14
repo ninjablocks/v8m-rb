@@ -2182,7 +2182,7 @@ void Assembler::set_target_address_at(Address pc, Address target) {
 
 #ifndef ALLOW_JAL_IN_BOUNDARY_REGION
   // This is a workaround to the 24k core E156 bug (affect some 34k cores also).
-  // Since the excluded space is only 64KB out of 256MB (0.02 %), we will just 
+  // Since the excluded space is only 64KB out of 256MB (0.02 %), we will just
   // apply this workaround for all cores so we don't have to identify the core.
   if (in_range) {
     // The 24k core E156 bug has some very specific requirements, we only check
