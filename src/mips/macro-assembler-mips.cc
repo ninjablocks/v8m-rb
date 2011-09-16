@@ -818,6 +818,20 @@ void MacroAssembler::MultiPopReversedFPU(RegList regs) {
 }
 
 
+void MacroAssembler::FlushICache(Register address, unsigned instructions) {
+  RegList saved_regs = kJSCallerSaved | ra.bit();
+  MultiPush(saved_regs);
+
+  // Save to a0 in case address == t0.
+  Move(a0, address);
+  PrepareCallCFunction(2, t0);
+
+  li(a1, instructions * kInstrSize);
+  CallCFunction(ExternalReference::flush_icache_function(isolate()), 2);
+  MultiPop(saved_regs);
+}
+
+
 void MacroAssembler::Ext(Register rt,
                          Register rs,
                          uint16_t pos,
@@ -838,20 +852,6 @@ void MacroAssembler::Ext(Register rt,
       srl(rt, rt, shift_right);
     }
   }
-}
-
-
-void MacroAssembler::FlushICache(Register address, unsigned instructions) {
-  RegList saved_regs = kJSCallerSaved | ra.bit();
-  MultiPush(saved_regs);
-
-  // Save to a0 in case address == t0.
-  Move(a0, address);
-  PrepareCallCFunction(2, t0);
-
-  li(a1, instructions * kInstrSize);
-  CallCFunction(ExternalReference::flush_icache_function(isolate()), 2);
-  MultiPop(saved_regs);
 }
 
 
@@ -1040,6 +1040,7 @@ void MacroAssembler::BranchF(Label* target,
     nop();
   }
 }
+
 
 void MacroAssembler::Move(FPURegister dst, double imm) {
   ASSERT(CpuFeatures::IsEnabled(FPU));
@@ -4529,10 +4530,10 @@ void MacroAssembler::CallCFunction(ExternalReference function,
                                    int num_reg_arguments,
                                    int num_double_arguments) {
   CallCFunctionHelper(no_reg,
-                     function,
-                     t8,
-                     num_reg_arguments,
-                     num_double_arguments);
+                      function,
+                      t8,
+                      num_reg_arguments,
+                      num_double_arguments);
 }
 
 
@@ -4618,17 +4619,6 @@ void MacroAssembler::CallCFunctionHelper(Register function,
 #undef BRANCH_ARGS_CHECK
 
 
-void MacroAssembler::LoadInstanceDescriptors(Register map,
-                                             Register descriptors) {
-  lw(descriptors,
-     FieldMemOperand(map, Map::kInstanceDescriptorsOrBitField3Offset));
-  Label not_smi;
-  JumpIfNotSmi(descriptors, &not_smi);
-  li(descriptors, Operand(FACTORY->empty_descriptor_array()));
-  bind(&not_smi);
-}
-
-
 void MacroAssembler::PatchRelocatedValue(Register li_location,
                                          Register scratch,
                                          Register new_value) {
@@ -4657,6 +4647,17 @@ void MacroAssembler::PatchRelocatedValue(Register li_location,
 
   // Update the I-cache so the new lui and ori can be executed.
   FlushICache(li_location, 2);
+}
+
+
+void MacroAssembler::LoadInstanceDescriptors(Register map,
+                                             Register descriptors) {
+  lw(descriptors,
+     FieldMemOperand(map, Map::kInstanceDescriptorsOrBitField3Offset));
+  Label not_smi;
+  JumpIfNotSmi(descriptors, &not_smi);
+  li(descriptors, Operand(FACTORY->empty_descriptor_array()));
+  bind(&not_smi);
 }
 
 

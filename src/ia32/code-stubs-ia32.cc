@@ -4292,6 +4292,24 @@ bool CEntryStub::NeedsImmovableCode() {
 }
 
 
+bool CEntryStub::CompilingCallsToThisStubIsGCSafe() {
+  return (!save_doubles_ || ISOLATE->fp_stubs_generated()) &&
+          result_size_ == 1;
+}
+
+
+void CodeStub::GenerateStubsAheadOfTime() {
+}
+
+
+void CodeStub::GenerateFPStubs() {
+  CEntryStub save_doubles(1);
+  save_doubles.SaveDoubles();
+  Handle<Code> code = save_doubles.GetCode();
+  code->GetIsolate()->set_fp_stubs_generated(true);
+}
+
+
 void CEntryStub::GenerateThrowTOS(MacroAssembler* masm) {
   __ Throw(eax);
 }

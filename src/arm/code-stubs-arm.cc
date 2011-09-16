@@ -3181,6 +3181,7 @@ void TranscendentalCacheStub::GenerateCallCFunction(MacroAssembler* masm,
   } else {
     __ vmov(r0, r1, d2);
   }
+  AllowExternalCallThatCantCauseGC scope(masm);
   switch (type_) {
     case TranscendentalCache::SIN:
       __ CallCFunction(ExternalReference::math_sin_double_function(isolate),
@@ -3330,6 +3331,24 @@ void MathPowStub::Generate(MacroAssembler* masm) {
 
 bool CEntryStub::NeedsImmovableCode() {
   return true;
+}
+
+
+bool CEntryStub::CompilingCallsToThisStubIsGCSafe() {
+  return (!save_doubles_ || ISOLATE->fp_stubs_generated()) &&
+          result_size_ == 1;
+}
+
+
+void CodeStub::GenerateStubsAheadOfTime() {
+}
+
+
+void CodeStub::GenerateFPStubs() {
+  CEntryStub save_doubles(1);
+  save_doubles.SaveDoubles();
+  Handle<Code> code = save_doubles.GetCode();
+  code->GetIsolate()->set_fp_stubs_generated(true);
 }
 
 

@@ -1243,7 +1243,7 @@ static void EmitTwoNonNanDoubleComparison(MacroAssembler* masm, Condition cc) {
 
   if (!CpuFeatures::IsSupported(FPU)) {
     __ push(ra);
-    __ PrepareCallCFunction(0, 2, t4);  // Two doubles count as 4 arguments.
+    __ PrepareCallCFunction(0, 2, t4);
     if (!IsMipsSoftFloatABI) {
       // We are not using MIPS FPU instructions, and parameters for the runtime
       // function call are prepaired in a0-a3 registers, but function we are
@@ -3318,6 +3318,7 @@ void TranscendentalCacheStub::GenerateCallCFunction(MacroAssembler* masm,
   } else {
     __ mov_d(f12, f4);
   }
+  AllowExternalCallThatCantCauseGC scope(masm);
   switch (type_) {
     case TranscendentalCache::SIN:
       __ CallCFunction(
@@ -3454,7 +3455,9 @@ void MathPowStub::Generate(MacroAssembler* masm) {
     {
       AllowExternalCallThatCantCauseGC scope(masm);
       __ CallCFunction(
-          ExternalReference::power_double_double_function(masm->isolate()), 0, 2);
+          ExternalReference::power_double_double_function(masm->isolate()),
+          0,
+          2);
       __ pop(ra);
       __ GetCFunctionDoubleResult(double_result);
     }
@@ -3471,6 +3474,24 @@ void MathPowStub::Generate(MacroAssembler* masm) {
 
 bool CEntryStub::NeedsImmovableCode() {
   return true;
+}
+
+
+bool CEntryStub::CompilingCallsToThisStubIsGCSafe() {
+  return (!save_doubles_ || ISOLATE->fp_stubs_generated()) &&
+          result_size_ == 1;
+}
+
+
+void CodeStub::GenerateStubsAheadOfTime() {
+}
+
+
+void CodeStub::GenerateFPStubs() {
+  CEntryStub save_doubles(1);
+  save_doubles.SaveDoubles();
+  Handle<Code> code = save_doubles.GetCode();
+  code->GetIsolate()->set_fp_stubs_generated(true);
 }
 
 
@@ -6516,29 +6537,25 @@ void ICCompareStub::GenerateHeapNumbers(MacroAssembler* masm) {
     __ Subu(a2, a0, Operand(kHeapObjectTag));
     __ ldc1(f2, MemOperand(a2, HeapNumber::kValueOffset));
 
-    Label fpu_eq, fpu_lt, fpu_gt;
-    // Compare operands (test if unordered) - built into the eq test below.
-    // Don't base result on status bits when a NaN is involved.
-    // Test if equal.
+    // Return a result of -1, 0, or 1, or use CompareStub for NaNs.
+    Label fpu_eq, fpu_lt;
+    // Test if equal, and also handle the unordered/NaN case.
     __ BranchF(&fpu_eq, &unordered, eq, f0, f2);
 
-    // Test if unordered or less (unordered case is already handled).
-    // Otherwise it's greater.
-    __ BranchF(&fpu_lt, NULL, lt, f0, f2, USE_DELAY_SLOT);
-    __ BranchF(&fpu_gt, NULL, gt, f0, f2, USE_DELAY_SLOT);
+    // Test if less (unordered case is already handled).
+    __ BranchF(&fpu_lt, NULL, lt, f0, f2);
 
-    // Return a result of -1, 0, or 1.
+    // Otherwise it's greater, so just fall thru, and return.
+    __ Ret(USE_DELAY_SLOT);
+    __ li(v0, Operand(GREATER));  // In delay slot.
+
     __ bind(&fpu_eq);
-    __ li(v0, Operand(EQUAL));
-    __ Ret();
+    __ Ret(USE_DELAY_SLOT);
+    __ li(v0, Operand(EQUAL));  // In delay slot.
 
     __ bind(&fpu_lt);
-    __ li(v0, Operand(LESS));
-    __ Ret();
-
-    __ bind(&fpu_gt);
-    __ li(v0, Operand(GREATER));
-    __ Ret();
+    __ Ret(USE_DELAY_SLOT);
+    __ li(v0, Operand(LESS));  // In delay slot.
 
     __ bind(&unordered);
   }

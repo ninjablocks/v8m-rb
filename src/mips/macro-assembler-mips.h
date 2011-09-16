@@ -577,13 +577,13 @@ class MacroAssembler: public Assembler {
   // into register dst.
   void LoadFromSafepointRegisterSlot(Register dst, Register src);
 
-  // MIPS32 R2 instruction macro.
-  void Ins(Register rt, Register rs, uint16_t pos, uint16_t size);
-  void Ext(Register rt, Register rs, uint16_t pos, uint16_t size);
-
   // Flush the I-cache from asm code. You should use CPU::FlushICache from C.
   // Does not handle errors.
   void FlushICache(Register address, unsigned instructions);
+
+  // MIPS32 R2 instruction macro.
+  void Ins(Register rt, Register rs, uint16_t pos, uint16_t size);
+  void Ext(Register rt, Register rs, uint16_t pos, uint16_t size);
 
   // ---------------------------------------------------------------------------
   // FPU macros. These do not handle special cases like NaN or +- inf.
@@ -684,6 +684,7 @@ class MacroAssembler: public Assembler {
   void LoadGlobalFunctionInitialMap(Register function,
                                     Register map,
                                     Register scratch);
+
 
   // -------------------------------------------------------------------------
   // JavaScript invokes.
@@ -1200,14 +1201,6 @@ class MacroAssembler: public Assembler {
                                            Register scratch2,
                                            Label* failure);
 
-  // ---------------------------------------------------------------------------
-  // Patching helpers.
-
-  // Patch the relocated value (lui/ori pair).
-  void PatchRelocatedValue(Register li_location,
-                           Register scratch,
-                           Register new_value);
-
   void ClampUint8(Register output_reg, Register input_reg);
 
   void ClampDoubleToUint8(Register result_reg,
@@ -1217,9 +1210,15 @@ class MacroAssembler: public Assembler {
 
   void LoadInstanceDescriptors(Register map, Register descriptors);
 
+
   // Activation support.
   void EnterFrame(StackFrame::Type type);
   void LeaveFrame(StackFrame::Type type);
+
+  // Patch the relocated value (lui/ori pair).
+  void PatchRelocatedValue(Register li_location,
+                           Register scratch,
+                           Register new_value);
 
  private:
   void CallCFunctionHelper(Register function,
