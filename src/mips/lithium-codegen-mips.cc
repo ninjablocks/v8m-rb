@@ -82,9 +82,11 @@ bool LCodeGen::GenerateCode() {
   status_ = GENERATING;
   CpuFeatures::Scope scope(FPU);
 
+  CodeStub::GenerateFPStubs();
+
   // Open a frame scope to indicate that there is a frame on the stack.  The
   // NONE indicates that the scope shouldn't actually generate code to set up
-  // the frame (that is done in GeneatePrologue).
+  // the frame (that is done in GeneratePrologue).
   FrameScope frame_scope(masm_, StackFrame::NONE);
 
   return GeneratePrologue() &&
