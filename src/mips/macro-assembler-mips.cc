@@ -3299,6 +3299,7 @@ void MacroAssembler::CopyBytes(Register src,
 
   // TODO(kalmard) check if this can be optimized to use sw in most cases.
   // Can't use unaligned access - copy byte by byte.
+#if __BYTE_ORDER == __LITTLE_ENDIAN
   sb(scratch, MemOperand(dst, 0));
   srl(scratch, scratch, 8);
   sb(scratch, MemOperand(dst, 1));
@@ -3306,6 +3307,16 @@ void MacroAssembler::CopyBytes(Register src,
   sb(scratch, MemOperand(dst, 2));
   srl(scratch, scratch, 8);
   sb(scratch, MemOperand(dst, 3));
+#else
+  sb(scratch, MemOperand(dst, 3));
+  srl(scratch, scratch, 8);
+  sb(scratch, MemOperand(dst, 2));
+  srl(scratch, scratch, 8);
+  sb(scratch, MemOperand(dst, 1));
+  srl(scratch, scratch, 8);
+  sb(scratch, MemOperand(dst, 0));
+#endif
+
   Addu(dst, dst, 4);
 
   Subu(length, length, Operand(kPointerSize));
@@ -3412,9 +3423,9 @@ void MacroAssembler::StoreNumberToDoubleElements(Register value_reg,
   sll(scratch1, key_reg, kDoubleSizeLog2 - kSmiTagSize);
   Addu(scratch1, scratch1, elements_reg);
   sw(mantissa_reg, FieldMemOperand(
-     scratch1, FixedDoubleArray::kHeaderSize - elements_offset));
+     scratch1, FixedDoubleArray::kHeaderSize - elements_offset + kHoleNanLower32Offset));
   uint32_t offset = FixedDoubleArray::kHeaderSize - elements_offset +
-      sizeof(kHoleNanLower32);
+      kHoleNanUpper32Offset;
   sw(exponent_reg, FieldMemOperand(scratch1, offset));
   jmp(&done);
 
@@ -3456,8 +3467,8 @@ void MacroAssembler::StoreNumberToDoubleElements(Register value_reg,
   if (destination == FloatingPointHelper::kFPURegisters) {
     sdc1(f0, MemOperand(scratch1, 0));
   } else {
-    sw(mantissa_reg, MemOperand(scratch1, 0));
-    sw(exponent_reg, MemOperand(scratch1, Register::kSizeInBytes));
+    sw(mantissa_reg, MemOperand(scratch1, Register::kMantissaOffset));
+    sw(exponent_reg, MemOperand(scratch1, Register::kExponentOffset));
   }
   bind(&done);
 }

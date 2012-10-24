@@ -516,13 +516,8 @@ class ConvertToDoubleStub : public PlatformCodeStub {
 
 
 void ConvertToDoubleStub::Generate(MacroAssembler* masm) {
-#ifndef BIG_ENDIAN_FLOATING_POINT
   Register exponent = result1_;
   Register mantissa = result2_;
-#else
-  Register exponent = result2_;
-  Register mantissa = result1_;
-#endif
   Label not_special;
   // Convert from Smi to integer.
   __ sra(source_, source_, kSmiTagSize);
@@ -624,9 +619,8 @@ void FloatingPointHelper::LoadNumber(MacroAssembler* masm,
   } else {
     ASSERT(destination == kCoreRegisters);
     // Load the double from heap number to dst1 and dst2 in double format.
-    __ lw(dst1, FieldMemOperand(object, HeapNumber::kValueOffset));
-    __ lw(dst2, FieldMemOperand(object,
-        HeapNumber::kValueOffset + kPointerSize));
+    __ lw(dst1, FieldMemOperand(object, HeapNumber::kMantissaOffset));
+    __ lw(dst2, FieldMemOperand(object, HeapNumber::kExponentOffset));
   }
   __ Branch(&done);
 
@@ -837,6 +831,11 @@ void FloatingPointHelper::CallCCodeForDoubleOperation(
     // a0-a3 registers to f12/f14 register pairs.
     __ Move(f12, a0, a1);
     __ Move(f14, a2, a3);
+  } else {
+#ifdef BIG_ENDIAN_FLOATING_POINT
+    __ Swap(a0, a1);
+    __ Swap(a2, a3);
+#endif
   }
   {
     AllowExternalCallThatCantCauseGC scope(masm);
@@ -849,8 +848,13 @@ void FloatingPointHelper::CallCCodeForDoubleOperation(
     __ sdc1(f0, FieldMemOperand(heap_number_result, HeapNumber::kValueOffset));
   } else {
     // Double returned in registers v0 and v1.
+#ifndef BIG_ENDIAN_FLOATING_POINT
     __ sw(v1, FieldMemOperand(heap_number_result, HeapNumber::kExponentOffset));
     __ sw(v0, FieldMemOperand(heap_number_result, HeapNumber::kMantissaOffset));
+#else
+    __ sw(v0, FieldMemOperand(heap_number_result, HeapNumber::kExponentOffset));
+    __ sw(v1, FieldMemOperand(heap_number_result, HeapNumber::kMantissaOffset));
+#endif
   }
   // Place heap_number_result in v0 and return to the pushed return address.
   __ pop(ra);
@@ -5576,14 +5580,18 @@ void StringHelper::GenerateCopyCharactersLong(MacroAssembler* masm,
   __ Branch(&simple_loop, eq, scratch4, Operand(zero_reg));
 
   // Loop for src/dst that are not aligned the same way.
-  // This loop uses lwl and lwr instructions. These instructions
-  // depend on the endianness, and the implementation assumes little-endian.
   {
     Label loop;
     __ bind(&loop);
+#if __BYTE_ORDER == __BIG_ENDIAN
+    __ lwl(scratch1, MemOperand(src));
+    __ Addu(src, src, Operand(kReadAlignment));
+    __ lwr(scratch1, MemOperand(src, -1));
+#else
     __ lwr(scratch1, MemOperand(src));
     __ Addu(src, src, Operand(kReadAlignment));
     __ lwl(scratch1, MemOperand(src, -1));
+#endif
     __ sw(scratch1, MemOperand(dest));
     __ Addu(dest, dest, Operand(kReadAlignment));
     __ Subu(scratch2, limit, dest);
@@ -6305,6 +6313,11 @@ void StringAddStub::Generate(MacroAssembler* masm) {
   // in a little endian mode).
   __ li(t2, Operand(2));
   __ AllocateAsciiString(v0, t2, t0, t1, t5, &call_runtime);
+#if __BYTE_ORDER == __BIG_ENDIAN
+  __ sll(t0, a2, 8);
+  __ srl(t1, a2, 8);
+  __ or_(a2, t0, t1);
+#endif
   __ sh(a2, FieldMemOperand(v0, SeqOneByteString::kHeaderSize));
   __ IncrementCounter(counters->string_add_native(), 1, a2, a3);
   __ DropAndRet(2);

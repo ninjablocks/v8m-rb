@@ -90,7 +90,7 @@
     # it's handled in build/standalone.gypi.
     'want_separate_host_toolset%': 1,
 
-    'v8_use_snapshot%': 'true',
+    'v8_use_snapshot%': 'false',
     'host_os%': '<(OS)',
     'werror%': '-Werror',
 
@@ -237,7 +237,7 @@
           'V8_TARGET_ARCH_IA32',
         ],
       }],  # v8_target_arch=="ia32"
-      ['v8_target_arch=="mipsel"', {
+      ['v8_target_arch=="mipsel" or v8_target_arch=="mips"', {
         'defines': [
           'V8_TARGET_ARCH_MIPS',
         ],
@@ -248,9 +248,11 @@
           ['mipscompiler=="yes"', {
             'target_conditions': [
               ['_toolset=="target"', {
-                'cflags': ['-EL'],
-                'ldflags': ['-EL'],
                 'conditions': [
+                  ['v8_target_arch=="mipsel"', {
+                    'cflags': ['-EL'],
+                    'ldflags': ['-EL'],
+                  }],
                   [ 'v8_use_mips_abi_hardfloat=="true"', {
                     'cflags': ['-mhard-float'],
                     'ldflags': ['-mhard-float'],
@@ -266,6 +268,9 @@
                  }],
                   ['mips_arch_variant=="loongson"', {
                     'cflags': ['-mips3', '-Wa,-mips3'],
+                  }],
+                  ['mips_arch_variant=="mips32r1"', {
+                    'cflags': ['-mips32', '-Wa,-mips32'],
                   }],
                 ],
               }],
@@ -344,7 +349,7 @@
       ['(OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="solaris" \
          or OS=="netbsd" or OS=="mac" or OS=="android") and \
         (v8_target_arch=="arm" or v8_target_arch=="ia32" or \
-         v8_target_arch=="mipsel")', {
+         v8_target_arch=="mipsel" or v8_target_arch=="mips")', {
         # Check whether the host compiler and target compiler support the
         # '-m32' option and set it if so.
         'target_conditions': [

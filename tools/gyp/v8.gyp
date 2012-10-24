@@ -555,8 +555,8 @@
                 '../../src/ia32/stub-cache-ia32.cc',
               ],
             }],
-            ['v8_target_arch=="mipsel"', {
-              'sources': [  ### gcmole(arch:mipsel) ###
+            ['v8_target_arch=="mipsel" or v8_target_arch=="mips"', {
+              'sources': [ ### gcmole(arch:mipsel) ###
                 '../../src/mips/assembler-mips.cc',
                 '../../src/mips/assembler-mips.h',
                 '../../src/mips/assembler-mips-inl.h',

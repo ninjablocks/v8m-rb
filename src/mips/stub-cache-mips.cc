@@ -2276,7 +2276,7 @@ Handle<Code> CallStubCompiler::CompileMathFloorCall(
 
   // Start checking for special cases.
   // Get the argument exponent and clear the sign bit.
-  __ lw(t1, FieldMemOperand(v0, HeapNumber::kValueOffset + kPointerSize));
+  __ lw(t1, FieldMemOperand(v0, HeapNumber::kExponentOffset));
   __ And(t2, t1, Operand(~HeapNumber::kSignMask));
   __ srl(t2, t2, HeapNumber::kMantissaBitsInTopWord);
 
