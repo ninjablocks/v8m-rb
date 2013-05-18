@@ -125,12 +125,12 @@ ecma/Date/15.9.2.2-5: PASS || FAIL
 ecma/Date/15.9.2.2-6: PASS || FAIL
 
 # 1026139: These date tests fail on arm and mips
-ecma/Date/15.9.5.29-1: PASS || FAIL if ($arch == arm || $arch == mipsel)
-ecma/Date/15.9.5.28-1: PASS || FAIL if ($arch == arm || $arch == mipsel)
+ecma/Date/15.9.5.29-1: PASS || FAIL if ($arch == arm || $arch == mips || $arch == mipsel)
+ecma/Date/15.9.5.28-1: PASS || FAIL if ($arch == arm || $arch == mips || $arch == mipsel)
 
 # 1050186: Arm/MIPS vm is broken; probably unrelated to dates
-ecma/Array/15.4.4.5-3: PASS || FAIL if ($arch == arm || $arch == mipsel)
-ecma/Date/15.9.5.22-2: PASS || FAIL if ($arch == arm || $arch == mipsel)
+ecma/Array/15.4.4.5-3: PASS || FAIL if ($arch == arm || $arch == mips || $arch == mipsel)
+ecma/Date/15.9.5.22-2: PASS || FAIL if ($arch == arm || $arch == mips || $arch == mipsel)
 
 # Flaky test that fails due to what appears to be a bug in the test.
 # Occurs depending on current time
@@ -828,7 +828,7 @@ js1_5/Regress/regress-451322: SKIP
 # BUG(1040): Allow this test to timeout.
 js1_5/GC/regress-203278-2: PASS || TIMEOUT
 
-[ $arch == mipsel && $mode == debug ]
+[ ($arch == mips || $arch == mipsel) && $mode == debug ]
 
 # The following tests make sure we fail gracefully in the presence of
 # absurdly long regexp, and we do in release mode. But we raise
@@ -841,7 +841,7 @@ js1_5/Regress/regress-280769: SKIP
 js1_5/Regress/regress-280769-4: SKIP
 js1_5/Regress/regress-280769-2: SKIP
 
-[ $arch == mipsel ]
+[ $arch == mips || $arch == mipsel ]
 
 # BUG(3251229): Times out when running new crankshaft test script.
 ecma_3/RegExp/regress-311414: SKIP
