@@ -42,7 +42,7 @@ namespace internal {
 // non-64-bit aligned address.
 static inline double read_double_value(Address p) {
 #ifndef V8_TARGET_ARCH_MIPS
-  return Memory::double_at(p)
+  return Memory::double_at(p);
 #else  // V8_TARGET_ARCH_MIPS
   union conversion {
     double d;
