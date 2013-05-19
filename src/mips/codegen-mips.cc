@@ -620,11 +620,10 @@ void MathExpGenerator::EmitMathExp(MacroAssembler* masm,
   __ li(temp3, Operand(ExternalReference::math_exp_log_table()));
   __ sll(at, temp2, 3);
   __ addu(at, at, temp3);
-  __ lw(at, MemOperand(at));
-  __ Addu(temp3, temp3, Operand(kPointerSize));
+  __ lw(at, MemOperand(at, Register::kMantissaOffset));
   __ sll(temp2, temp2, 3);
   __ addu(temp2, temp2, temp3);
-  __ lw(temp2, MemOperand(temp2));
+  __ lw(temp2, MemOperand(temp2, Register::kExponentOffset));
   __ Or(temp1, temp1, temp2);
   __ Move(input, at, temp1);
   __ mul_d(result, result, input);
